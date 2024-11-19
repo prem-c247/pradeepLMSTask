@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\Teacher;
+namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class TeacherRegisterRequest extends FormRequest
+class CreateUserModificationRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,18 +24,22 @@ class TeacherRegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'token' => 'required|string',
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users|max:255',
-            'phone' => 'nullable|digits_between:10,12|unique:users',
-            'password' => 'required|min:6',
-            'address' => 'nullable|string|max:255',
-            
-            'experience' => 'nullable|string|max:255',
-            'expertises' => 'nullable|string', // comma separated values
-            'profile' => 'nullable|image|mimes:png,jpg|max:2024',
+            'type' => 'required|in:edit,delete',
+            'target_id' => 'required|exists:users,id',
+            'name' => 'nullable|string',
+            'email' => 'nullable|email',
+            'phone' => 'nullable|string',
+            'profile' => 'nullable|string',
+            'address' => 'nullable|string',
+            'owner_name' => 'nullable|string',
+            'roll_number' => 'nullable|string',
+            'parents_name' => 'nullable|string',
+            'experience' => 'nullable|string',
+            'expertises' => 'nullable|string',
+            'user_status' => 'nullable|in:Active,Inactive',
         ];
     }
+
 
     protected function failedValidation(Validator $validator)
     {

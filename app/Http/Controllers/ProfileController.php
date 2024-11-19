@@ -55,7 +55,7 @@ class ProfileController extends Controller
 
             return response()->json(['status' => true, 'message' => 'The password has been changed successfully.'], 200);
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => __('message.fatal_error'), 'error' => $e->getMessage()], 500);
+            return response()->json(['status' => false, 'message' => 'Error while updating password', 'error' => $e->getMessage()], 500);
         }
     }
 }

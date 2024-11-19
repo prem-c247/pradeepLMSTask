@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('email');
             $table->enum('status', ['in progress', 'registered', 'expired'])->default('in progress');
             $table->timestamp('expire_at')->nullable();
+            $table->timestamp('accepted_at')->nullable();
             $table->timestamps();
         });
     }

@@ -27,8 +27,8 @@ class UpdateProfileRequest extends FormRequest
 
         return [
             'name' => 'required|string|max:255',
-            'email' => 'nullable|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:255',
+            'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'sometimes|digits_between:10,12|unique:users,phone,' . $user->id,
             'address' => 'nullable|string|max:255',
             'profile' => 'nullable|mimes:png,jpg|max:2024',
         ];

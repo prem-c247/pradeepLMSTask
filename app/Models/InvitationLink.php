@@ -6,5 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class InvitationLink extends Model
 {
-    protected $fillable = ['sender_id','email', 'status', 'expire_at'];
+    const REGISTERED = 'registered';
+    const INPROGRESS = 'in progress';
+    const EXPIRED = 'expired';
+
+    protected $fillable = ['sender_id', 'email', 'status', 'accepted_at', 'expire_at'];
 }

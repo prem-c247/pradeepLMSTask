@@ -32,4 +32,44 @@ class CommonHelper
             return false;
         }
     }
+
+    public static function deleteImageByUrl($fileUrl)
+    {
+        // do not remove default images
+        $noUserImage    =   NO_PROFILE;
+        $defaultImg     =   DEFAULT_IMAGE;
+
+        if ($fileUrl == asset($noUserImage)) {
+            return false;
+        }
+
+        if ($fileUrl == asset($defaultImg)) {
+            return false;
+        }
+
+        $appUrl = config('app.url');
+
+        $relativePath = str_replace($appUrl, '', $fileUrl);
+
+        $localPath = public_path($relativePath);
+
+        if (file_exists($localPath)) {
+            unlink($localPath);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static function deleteImageByName($fileName, $directory)
+    {
+        $localPath = public_path('uploads/' . $directory . '/' . $fileName);
+
+        if (file_exists($localPath)) {
+            unlink($localPath);
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

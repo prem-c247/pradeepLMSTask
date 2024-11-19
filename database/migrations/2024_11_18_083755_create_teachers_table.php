@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('teachers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('exprience')->nullable();
+            $table->foreignId('school_id')->constrained('users')->onDelete('cascade')->comment('school ID of user table');
+            $table->string('experience')->nullable();
+            $table->string('expertises')->nullable()->comment('comma seprated values');
             $table->timestamps();
         });
     }

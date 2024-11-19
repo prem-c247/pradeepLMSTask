@@ -18,10 +18,10 @@ class User extends Authenticatable
     public const PENDING = 'Pending';
 
     // Roles
-    public const ROLE_ADMIN = 'Admin';
-    public const ROLE_SCHOOL = 'School';
-    public const ROLE_TEACHER = 'Teacher';
-    public const ROLE_STUDENT = 'Student';
+    public const ROLE_ADMIN = 1;
+    public const ROLE_SCHOOL = 2;
+    public const ROLE_TEACHER = 3;
+    public const ROLE_STUDENT = 4;
 
 
     protected $fillable = [
@@ -42,7 +42,9 @@ class User extends Authenticatable
         return ['email_verified_at' => 'datetime', 'password' => 'hashed'];
     }
 
-
+    // =======================++++++++++++==============
+    // +++++++++++++ Accessors +++++++++++++++++++++
+    // =======================++++++++++++==============
     public function getProfileAttribute($value)
     {
         if ($value) {
@@ -51,6 +53,15 @@ class User extends Authenticatable
 
         $defaultImg = NO_PROFILE;
         return asset($defaultImg);
+    }
+
+
+    // =======================++++++++++++==============
+    // +++++++++++++ Relations +++++++++++++++++++++
+    // =======================++++++++++++==============
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
     }
 
     public function studentDetails()
@@ -66,5 +77,23 @@ class User extends Authenticatable
     public function schoolDetails()
     {
         return $this->hasOne(School::class);
+    }
+
+    // =======================++++++++++++==============
+    // +++++++++++++ Scopes +++++++++++++++++++++
+    // =======================++++++++++++==============
+    public function scopeTeacher($query)
+    {
+        return $query->where('role_id', self::ROLE_TEACHER);
+    }
+
+    public function scopeSchool($query)
+    {
+        return $query->where('role_id', self::ROLE_SCHOOL);
+    }
+
+    public function scopeStudent($query)
+    {
+        return $query->where('role_id', self::ROLE_STUDENT);
     }
 }
