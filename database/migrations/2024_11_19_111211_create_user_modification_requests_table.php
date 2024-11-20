@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('user_modification_requests', function (Blueprint $table) {
             $table->id();
             $table->enum('type', ['edit', 'delete']);
-            $table->foreignId('requested_by')->constrained('users')->onDelete('cascade');
-            $table->foreignId('requested_to')->constrained('users')->onDelete('cascade');
-            $table->foreignId('target_id')->constrained('users')->onDelete('cascade');
+            $table->unsignedBigInteger('requested_by');
+            $table->unsignedBigInteger('requested_to');
+            $table->unsignedBigInteger('target_id');
             $table->string('name')->nullable();
             $table->string('email')->nullable()->unique();
             $table->string('phone')->nullable()->unique();

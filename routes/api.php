@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\{AuthController, ProfileController, SchoolController, StudentController, TeacherController, UserController, UserModificationController};
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
@@ -61,4 +60,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/create', [UserModificationController::class, 'createRequest']);
         Route::post('/approved/{id}', [UserModificationController::class, 'approvedRequest']);
     });
+});
+
+
+Route::fallback(function () {
+    return response()->json(['status' => false, 'message' => 'Request route is not found!'], 404);
 });

@@ -84,6 +84,28 @@ class UserModificationController extends Controller
         try {
             $request = UserModificationRequest::find($id);
 
+            if (!$request) {
+                return response()->json(['status' => false, 'message' => 'Request is not found!.',], 404);
+            }
+
+            $targetUser = User::find($request->target_id);
+
+            if (!$targetUser) {
+                return response()->json(['status' => false, 'message' => 'Targeted user is not found!.',], 404);
+            }
+
+            // If request type delete, remove the target user 
+            if ($request->type === 'delete') {
+                $targetUser->delete();
+
+                $request->update(['status' => 'Approved']);
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'User modification request approved successfully.',
+                ], 200);
+            }
+
             $updatedData = $request->toArray();
 
             // Remove created and updated date from the array
@@ -94,10 +116,6 @@ class UserModificationController extends Controller
                 return !is_null($value);
             });
 
-            if (!$request) {
-                return response()->json(['status' => false, 'message' => 'Request is not found!.',], 404);
-            }
-
             // Ensure the request is pending
             if ($request->status !== 'Pending') {
                 return response()->json([
@@ -107,12 +125,6 @@ class UserModificationController extends Controller
             }
 
             DB::beginTransaction();
-
-            $targetUser = User::find($request->target_id);
-
-            if (!$targetUser) {
-                return response()->json(['status' => false, 'message' => 'Targeted user is not found!.',], 404);
-            }
 
             $targetUser->update($updatedData);
 
