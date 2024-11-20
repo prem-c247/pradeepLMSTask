@@ -2,11 +2,9 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Rules\UniqueAcrossTables;
 
-class CreateUserModificationRequest extends FormRequest
+class CreateUserModificationRequest extends BaseFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,29 +21,30 @@ class CreateUserModificationRequest extends FormRequest
      */
     public function rules(): array
     {
+        $id = request('target_id');
+
         return [
             'type' => 'required|in:edit,delete',
             'target_id' => 'required|exists:users,id',
-            'name' => 'nullable|string',
-            'email' => 'nullable|email',
-            'phone' => 'nullable|string',
-            'profile' => 'nullable|string',
-            'address' => 'nullable|string',
-            'owner_name' => 'nullable|string',
-            'roll_number' => 'nullable|string',
-            'parents_name' => 'nullable|string',
-            'experience' => 'nullable|string',
-            'expertises' => 'nullable|string',
-            'user_status' => 'nullable|in:Active,Inactive',
+            'name' => 'sometimes|string|max:255',
+            'email' => [
+                'sometimes',
+                'email',
+                new UniqueAcrossTables('email', ['users', 'user_modification_requests'], $id),
+            ],
+            'phone' => [
+                'sometimes',
+                'digits_between:10,12',
+                new UniqueAcrossTables('phone', ['users', 'user_modification_requests'], $id),
+            ],
+            'profile' => 'sometimes|image|mimes:png,jpg|max:2048',
+            'address' => 'sometimes|string|max:255',
+            'owner_name' => 'sometimes|string|max:255',
+            'roll_number' => 'sometimes|string|max:255',
+            'parents_name' => 'sometimes|string|max:255',
+            'experience' => 'sometimes|string|max:255',
+            'expertises' => 'sometimes|string|max:255',
+            'user_status' => 'sometimes|in:Active,Inactive',
         ];
-    }
-
-
-    protected function failedValidation(Validator $validator)
-    {
-        throw new HttpResponseException(response()->json([
-            'status'  => false,
-            'message' => $validator->errors()->first(),
-        ], 400));
     }
 }

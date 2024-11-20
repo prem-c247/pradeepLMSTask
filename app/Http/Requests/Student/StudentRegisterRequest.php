@@ -2,11 +2,9 @@
 
 namespace App\Http\Requests\Student;
 
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Http\Requests\BaseFormRequest;
 
-class StudentRegisterRequest extends FormRequest
+class StudentRegisterRequest extends BaseFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -33,13 +31,5 @@ class StudentRegisterRequest extends FormRequest
             'parents_name' => 'nullable|string|max:255',
             'profile' => 'nullable|image|mimes:png,jpg|max:2024',
         ];
-    }
-
-    protected function failedValidation(Validator $validator)
-    {
-        throw new HttpResponseException(response()->json([
-            'status'  => false,
-            'message' => $validator->errors()->first(),
-        ], 400));
     }
 }

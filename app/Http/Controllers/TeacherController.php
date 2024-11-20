@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CommonHelper;
+use App\Http\Requests\Teacher\UpdateTeacherRequest;
 use App\Mail\TeacherInvitationMail;
 use App\Models\{InvitationLink, User};
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Mail, Validator};
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\{DB, Mail, Validator};
 
 class TeacherController extends Controller
 {
@@ -94,6 +97,83 @@ class TeacherController extends Controller
                 'message' => "An unexpected error occurred. Please try again.",
                 'error' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function details($id)
+    {
+        $teacher = User::teacher()->with('teacherDetails')->find($id);
+
+        if (!$teacher) {
+            return response()->json(['status' => false, 'message' => 'teacher not found!'], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'teacher details retrieved successfully.',
+            'data' => $teacher
+        ], 200);
+    }
+
+    public function update(UpdateTeacherRequest $request, $id)
+    {
+        try {
+            $teacher = User::teacher()->find($id);
+
+            if (!$teacher) {
+                return response()->json(['status' => false, 'message' => 'teacher not found!'], 404);
+            }
+
+            $validated = $request->validated();
+
+            // upload profile image by the helper function
+            if ($request->hasFile('profile')) {
+                $validated['profile'] = CommonHelper::fileUpload($request->file('profile'), 'profile-images');
+
+                // Remove the old image
+                $oldImageName = $teacher->getAttributes()['profile'];
+                CommonHelper::deleteImageByName($oldImageName, 'profile-images');
+            }
+
+            DB::beginTransaction();
+
+            // Update the teacher's basic information
+            $teacher->update(Arr::only($validated, ['name', 'email', 'phone', 'profile', 'status']));
+
+            // Update the teacher's details
+            $teacher->teacherDetails()->update(Arr::only($validated, ['experience', 'expertises']));
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'teacher updated successfully.',
+                'data' => $teacher
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['status' => false, 'message' => 'An error occurred while updating the teacher.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function delete($id)
+    {
+        try {
+            $teacher = User::teacher()->find($id);
+
+            if (!$teacher) {
+                return response()->json(['status' => false, 'message' => 'teacher not found!'], 404);
+            }
+
+            $teacher->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'teacher and associated user deleted successfully.'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => 'An error occurred while deleting the teacher.', 'error' => $e->getMessage()], 500);
         }
     }
 }

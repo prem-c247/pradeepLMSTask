@@ -122,20 +122,17 @@ class AuthController extends Controller
             // Create the user (teacher role)
             $teacherRoleId = Role::where('id', User::ROLE_TEACHER)->value('id');
 
-            $user = User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => $data['password'],
-                'role_id' => $teacherRoleId,
-                'status' => User::ACTIVE
-            ]);
+            $data['role_id'] = $teacherRoleId;
+            $data['status'] = User::ACTIVE;
+            $data['school_id'] = decrypt($data['token']); // teacher will assigned to this school
+
+            // remove the token form the data array
+            unset($data['token']);
+
+            $user = User::create($data);
 
             // Create the teacher profile
-            Teacher::create([
-                'user_id' => $user->id,
-                'school_id' => decrypt($data['token']), // teacher will assigned to this school
-                'experience' => $data['experience'] ?? null
-            ]);
+            $user->teacherDetails()->create($data);
 
             // Mark the invitation as registered
             InvitationLink::where('email', $data['email'])->update([

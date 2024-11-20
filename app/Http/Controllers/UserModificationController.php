@@ -2,13 +2,42 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CommonHelper;
 use App\Http\Requests\CreateUserModificationRequest;
 use App\Models\{User, UserModificationRequest};
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\{DB};
 
 class UserModificationController extends Controller
 {
+    public function index()
+    {
+        $loggedInUser = auth()->user();
+
+        $query = UserModificationRequest::query();
+
+        // If the user is not an admin, filter by the 'requested_to' 
+        if ($loggedInUser->role_id != User::ROLE_ADMIN) {
+            $query->where('requested_to', $loggedInUser->id);
+        }
+
+        $modificationRequests = $query->with('requestedBy', 'requestedTo', 'targetUser')
+            ->paginate(PAGINATE);
+
+        if ($modificationRequests->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No modification requests found.',
+                'data' => []
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'User modification requests retrieved successfully.',
+            'data' => $modificationRequests
+        ]);
+    }
+
     public function createRequest(CreateUserModificationRequest $request)
     {
         try {
@@ -28,6 +57,11 @@ class UserModificationController extends Controller
 
             $validatedData['requested_by'] = auth()->id();
             $validatedData['requested_to'] = $requestedID;
+
+            // upload profile image by the helper function
+            if ($request->hasFile('profile')) {
+                $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile'), 'profile-images');
+            }
 
             $modificationRequest = UserModificationRequest::create($validatedData);
 
@@ -50,6 +84,16 @@ class UserModificationController extends Controller
         try {
             $request = UserModificationRequest::find($id);
 
+            $updatedData = $request->toArray();
+
+            // Remove created and updated date from the array
+            unset($updatedData['created_at'], $updatedData['updated_at']);
+
+            // remove the null value element
+            $updatedData = array_filter($request->toArray(), function ($value) {
+                return !is_null($value);
+            });
+
             if (!$request) {
                 return response()->json(['status' => false, 'message' => 'Request is not found!.',], 404);
             }
@@ -66,12 +110,11 @@ class UserModificationController extends Controller
 
             $targetUser = User::find($request->target_id);
 
-            $targetUser->update([
-                'name' => $request->name ?? $targetUser->name,
-                'email' => $request->email ?? $targetUser->email,
-                'phone' => $request->phone ?? $targetUser->phone,
-                'status' => $request->user_status ?? $targetUser->status,
-            ]);
+            if (!$targetUser) {
+                return response()->json(['status' => false, 'message' => 'Targeted user is not found!.',], 404);
+            }
+
+            $targetUser->update($updatedData);
 
             // Update additional details in the relevant detail table
             if ($targetUser->role->id === User::ROLE_STUDENT) {

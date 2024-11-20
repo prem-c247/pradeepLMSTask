@@ -29,17 +29,36 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('update-user-status', [UserController::class, 'UpdateUserStatus']);
 
     // Teachers
-    Route::get('teachers', [TeacherController::class, 'index']);
+    Route::prefix('teachers')->group(function () {
+        Route::get('/', [TeacherController::class, 'index']);
+        Route::get('{id}', [TeacherController::class, 'details']);
+        Route::post('{id}', [TeacherController::class, 'update']);
+        Route::delete('{id}', [TeacherController::class, 'delete']);
+    });
+
+    // Send invite link to teacher
     Route::post('send-invite-link', [TeacherController::class, 'SendInviteLinkToTeacher']);
 
-    // Schools
-    Route::get('schools', [SchoolController::class, 'index']);
-    Route::get('schools/{id}', [SchoolController::class, 'details']);
-    Route::post('schools/{id}', [SchoolController::class, 'update']);
-    Route::delete('schools/{id}', [SchoolController::class, 'delete']);
+    // School
+    Route::prefix('schools')->group(function () {
+        Route::get('/', [SchoolController::class, 'index']);
+        Route::get('{id}', [SchoolController::class, 'details']);
+        Route::post('{id}', [SchoolController::class, 'update']);
+        Route::delete('{id}', [SchoolController::class, 'delete']);
+    });
 
     // Student
-    Route::get('students', [StudentController::class, 'index']);
+    Route::prefix('students')->group(function () {
+        Route::get('/', [StudentController::class, 'index']);
+        Route::get('{id}', [StudentController::class, 'details']);
+        Route::post('{id}', [StudentController::class, 'update']);
+        Route::delete('{id}', [StudentController::class, 'delete']);
+    });
 
-    Route::post('create-modification-request', [UserModificationController::class, 'createRequest']);
+    // User modification requests
+    Route::prefix('modification-request')->group(function () {
+        Route::get('/', [UserModificationController::class, 'index']);
+        Route::post('/create', [UserModificationController::class, 'createRequest']);
+        Route::post('/approved/{id}', [UserModificationController::class, 'approvedRequest']);
+    });
 });

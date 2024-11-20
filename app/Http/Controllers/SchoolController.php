@@ -68,6 +68,10 @@ class SchoolController extends Controller
             // upload profile image by the helper function
             if ($request->hasFile('profile')) {
                 $validated['profile'] = CommonHelper::fileUpload($request->file('profile'), 'profile-images');
+
+                // Remove the old image
+                $oldImageName = $school->getAttributes()['profile'];
+                CommonHelper::deleteImageByName($oldImageName, 'profile-images');
             }
 
             $school->update($validated);

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\School;
+namespace App\Http\Requests\Teacher;
 
 use App\Http\Requests\BaseFormRequest;
 
-class UpdateSchoolRequest extends BaseFormRequest
+class UpdateTeacherRequest extends BaseFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,11 +23,11 @@ class UpdateSchoolRequest extends BaseFormRequest
     {
         return [
             'name' => 'sometimes|string|max:255',
-            // 'email' => 'sometimes|email|max:255|unique:users,email,' . $this->route('id'),
             'phone' => 'sometimes|digits_between:10,12|unique:users,phone,' . $this->route('id'),
             'address' => 'sometimes|string|max:255',
             'profile' => 'sometimes|image|mimes:png,jpg|max:2024',
-            'owner_name' => 'sometimes|string|max:255'
+            'experience' => 'sometimes|string|max:255',
+            'expertises' => 'sometimes|string|max:255',
         ];
     }
 }
