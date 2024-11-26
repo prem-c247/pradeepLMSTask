@@ -6,56 +6,44 @@ use App\Helpers\CommonHelper;
 use App\Http\Requests\Teacher\UpdateTeacherRequest;
 use App\Mail\TeacherInvitationMail;
 use App\Models\{InvitationLink, User};
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\{DB, Mail, Validator};
+use Illuminate\Support\Facades\{Mail, Validator};
 
 class TeacherController extends Controller
 {
     function index(Request $request)
     {
         $query = User::teacher()->with('role', 'teacherDetails.school.schoolDetails');
-
         // Apply filters
         if ($request->filled('filter')) {
             $filter = $request->filter;
 
             $query->where(function ($q) use ($filter) {
-                $q->where('name', 'like', '%' . $filter . '%')
+                $q->where('first_name', 'like', '%' . $filter . '%')
+                    ->orWhere('last_name', 'like', '%' . $filter . '%')
                     ->orWhere('email', 'like', '%' . $filter . '%')
                     ->orWhere('status', 'like', '%' . $filter . '%');
             });
         }
-
-        // Filter by the school name
-        if ($request->filled('school_name')) {
-            $query->whereHas('teacherDetails.school', function ($q) use ($request) {
-                $q->where('name', 'like', "%$request->school_name%");
-            });
-        }
-
         $teachers = $query->paginate(PAGINATE);
-
         if ($teachers->isEmpty()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Teachers not found!',
-                'data' => []
-            ], 200);
+            return $this->notFound('teacher');
         }
 
-        return response()->json(['status' => true, 'message' => 'Get teachers successfully.', 'data' => $teachers], 200);
+        return response200(__('message.fetched', ['name' => __('message.teacher')]), $teachers);
     }
 
     function SendInviteLinkToTeacher(Request $request)
     {
         try {
             $validator = Validator::make($request->all(), [
-                'email' => 'required|email|max:255'
+                'email' => 'required|email|max:50'
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['status' => false, 'message' => $validator->errors()->first()], 400);
+                return response400($validator->errors()->first());
             }
 
             $authID  = auth()->id();
@@ -85,45 +73,30 @@ class TeacherController extends Controller
             // Send the invitation email
             Mail::to($request->email)->send(new TeacherInvitationMail($invitationLink));
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Invitation link has been sent to this email address successfully.',
-                'token' => $token,
-                'data' => $invitation
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => "An unexpected error occurred. Please try again.",
-                'error' => $e->getMessage(),
-            ], 500);
+            return response200(__('message.send_invite'), ['token' => $token, 'data' => $invitation]);
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => __('message.sending_mail')]), $e->getMessage());
         }
     }
 
-    public function details($id)
+    public function details($teacherID)
     {
-        $teacher = User::teacher()->with('teacherDetails')->find($id);
+        $teacher = User::teacher()->with('teacherDetails')->find($teacherID);
 
         if (!$teacher) {
-            return response()->json(['status' => false, 'message' => 'teacher not found!'], 404);
+            return $this->notFound('teacher');
         }
 
-        return response()->json([
-            'status' => true,
-            'message' => 'teacher details retrieved successfully.',
-            'data' => $teacher
-        ], 200);
+        return response200(__('message.fetched', ['name' => __('message.teacher')]), $teacher);
     }
 
-    public function update(UpdateTeacherRequest $request, $id)
+    public function update(UpdateTeacherRequest $request, $teacherID)
     {
         try {
-            $teacher = User::teacher()->find($id);
-
+            $teacher = User::teacher()->find($teacherID);
             if (!$teacher) {
-                return response()->json(['status' => false, 'message' => 'teacher not found!'], 404);
+                return $this->notFound('teacher');
             }
-
             $validated = $request->validated();
 
             // upload profile image by the helper function
@@ -132,48 +105,44 @@ class TeacherController extends Controller
 
                 // Remove the old image
                 $oldImageName = $teacher->getAttributes()['profile'];
-                CommonHelper::deleteImageByName($oldImageName, 'profile-images');
+                if ($oldImageName) {
+                    CommonHelper::deleteImageByName($oldImageName, 'profile-images');
+                }
             }
-
-            DB::beginTransaction();
-
             // Update the teacher's basic information
             $teacher->update(Arr::only($validated, ['name', 'email', 'phone', 'profile', 'status']));
 
+            $validated['expertises']  = json_encode($request->expertises);
             // Update the teacher's details
             $teacher->teacherDetails()->update(Arr::only($validated, ['experience', 'expertises']));
 
-            DB::commit();
+            // get the address validation rule array's keys and update the address
+            $addressValidationArray = CommonHelper::getAddressValidationRules();
+            $addressValidationArrayKeys = array_keys($addressValidationArray);
+            $teacher->addresses()->update(Arr::only($validated, $addressValidationArrayKeys));
 
-            return response()->json([
-                'status' => true,
-                'message' => 'teacher updated successfully.',
-                'data' => $teacher
-            ], 200);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json(['status' => false, 'message' => 'An error occurred while updating the teacher.', 'error' => $e->getMessage()], 500);
+            // load the all related data
+            $teacher = $teacher->load('teacherDetails', 'addresses');
+            return response200(__('message.updated', ['name' => __('message.teacher')]), $teacher);
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => __('message.updation')]), $e->getMessage());
         }
     }
 
-    public function delete($id)
+    public function delete($teacherID)
     {
         try {
-            $teacher = User::teacher()->find($id);
+            $teacher = User::teacher()->find($teacherID);
 
             if (!$teacher) {
-                return response()->json(['status' => false, 'message' => 'teacher not found!'], 404);
+                return $this->notFound('teacher');
             }
 
             $teacher->delete();
 
-            return response()->json([
-                'status' => true,
-                'message' => 'teacher and associated user deleted successfully.'
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'An error occurred while deleting the teacher.', 'error' => $e->getMessage()], 500);
+            return response200(__('message.deleted', ['name' => __('message.teacher')]), $teacher);
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => __('message.deletion')]), $e->getMessage());
         }
     }
 }

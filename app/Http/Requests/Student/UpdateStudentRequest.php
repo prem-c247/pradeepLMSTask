@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests\Student;
 
+use App\Helpers\CommonHelper;
 use App\Http\Requests\BaseFormRequest;
+use App\Rules\ImageUploadRule;
+use App\Rules\NameRule;
 
 class UpdateStudentRequest extends BaseFormRequest
 {
@@ -21,14 +24,17 @@ class UpdateStudentRequest extends BaseFormRequest
      */
     public function rules(): array
     {
-        return [
-            'name' => 'sometimes|string|max:255',
-            'phone' => 'sometimes|digits_between:10,12|unique:users,phone,' . $this->route('id'),
-            'address' => 'sometimes|string|max:255',
-            'profile' => 'sometimes|image|mimes:png,jpg|max:2024',
+        $addressValidationArray = CommonHelper::getAddressValidationRules();
 
-            'roll_number' => 'sometimes|string|max:255',
-            'parents_name' => 'required|string|max:255',
+        $rules = [
+            'first_name' => ['sometimes', 'string', 'max:50', new NameRule()],
+            'last_name' => ['sometimes', 'string', 'max:50', new NameRule()],
+            'phone' => 'sometimes|digits_between:10,12|unique:users,phone,' . $this->route('id'),
+            'profile' =>  ['nullable', new ImageUploadRule()],
+
+            'roll_number' => 'sometimes|string|max:20',
+            'parents_name' => 'required|string|max:50',
         ];
+        return array_merge($addressValidationArray, $rules);
     }
 }

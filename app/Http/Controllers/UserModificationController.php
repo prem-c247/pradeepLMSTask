@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\CommonHelper;
 use App\Http\Requests\CreateUserModificationRequest;
 use App\Models\{User, UserModificationRequest};
-use Illuminate\Support\Facades\{DB};
+use Exception;
 
 class UserModificationController extends Controller
 {
@@ -15,7 +15,7 @@ class UserModificationController extends Controller
 
         $query = UserModificationRequest::query();
 
-        // If the user is not an admin, filter by the 'requested_to' 
+        // If the user is not an admin, filter by the 'requested_to'
         if ($loggedInUser->role_id != User::ROLE_ADMIN) {
             $query->where('requested_to', $loggedInUser->id);
         }
@@ -24,18 +24,10 @@ class UserModificationController extends Controller
             ->paginate(PAGINATE);
 
         if ($modificationRequests->isEmpty()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'No modification requests found.',
-                'data' => []
-            ], 404);
+            return $this->notFound('user_modification_request');
         }
 
-        return response()->json([
-            'status' => true,
-            'message' => 'User modification requests retrieved successfully.',
-            'data' => $modificationRequests
-        ]);
+        return response200(__('message.fetched', ['name' => __('message.user_modification_request')]), $modificationRequests);
     }
 
     public function createRequest(CreateUserModificationRequest $request)
@@ -52,7 +44,7 @@ class UserModificationController extends Controller
             }
 
             if (!$user) {
-                return response()->json(['status' => false, 'message' => 'Target user not found!', 'data' => []], 404);
+                return $this->notFound('user');
             }
 
             $validatedData['requested_by'] = auth()->id();
@@ -65,17 +57,10 @@ class UserModificationController extends Controller
 
             $modificationRequest = UserModificationRequest::create($validatedData);
 
-            return response()->json([
-                'status' => true,
-                'message' => 'User modification request created successfully.',
-                'data' => $modificationRequest,
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'An error occurred while creating the request.',
-                'error' => $e->getMessage(),
-            ], 500);
+
+            return response201(__('message.created', ['name' => __('message.user_modification_request')]), $modificationRequest);
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => __('message.user_modification_request')]), $e->getMessage());
         }
     }
 
@@ -83,29 +68,23 @@ class UserModificationController extends Controller
     {
         try {
             $request = UserModificationRequest::find($id);
-
             if (!$request) {
-                return response()->json(['status' => false, 'message' => 'Request is not found!.',], 404);
+                return $this->notFound('user_modification_request');
             }
 
             $targetUser = User::find($request->target_id);
-
             if (!$targetUser) {
-                return response()->json(['status' => false, 'message' => 'Targeted user is not found!.',], 404);
+                return $this->notFound('user');
             }
 
             // If request type delete, remove the target user 
-            if ($request->type === 'delete') {
+            if ($request->type === UserModificationRequest::DELETE) {
                 $targetUser->delete();
 
-                $request->update(['status' => 'Approved']);
+                $request->update(['status' => UserModificationRequest::APPROVED]);
 
-                return response()->json([
-                    'status' => true,
-                    'message' => 'User modification request approved successfully.',
-                ], 200);
+                return response200(__('message.approved', ['name' => __('message.user_modification_request')]));
             }
-
             $updatedData = $request->toArray();
 
             // Remove created and updated date from the array
@@ -117,15 +96,9 @@ class UserModificationController extends Controller
             });
 
             // Ensure the request is pending
-            if ($request->status !== 'Pending') {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'This request has already been processed.',
-                ], 400);
+            if ($request->status !== UserModificationRequest::PENDING) {
+                return response400(__('message.processed', ['name' => __('message.user_modification_request')]));
             }
-
-            DB::beginTransaction();
-
             $targetUser->update($updatedData);
 
             // Update additional details in the relevant detail table
@@ -142,22 +115,11 @@ class UserModificationController extends Controller
                     'expertises' => $request->expertises ?? $targetUser->teacherDetails->expertises,
                 ]);
             }
+            $request->update(['status' => UserModificationRequest::APPROVED]);
 
-            $request->update(['status' => 'Approved']);
-
-            DB::commit();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'User modification request approved successfully.',
-            ], 200);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'status' => false,
-                'message' => 'Error processing the request.',
-                'error' => $e->getMessage(),
-            ], 500);
+            return response200(__('message.approved', ['name' => __('message.user_modification_request')]));
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => __('message.user_modification_request')]), $e->getMessage());
         }
     }
 }

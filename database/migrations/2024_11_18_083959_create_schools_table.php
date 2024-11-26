@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('schools', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('owner_name')->nullable();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade')->index('school_user_index');
+            $table->string('owner_name', 50)->nullable();
+            $table->string('school_name', 200)->nullable();
             $table->timestamps();
         });
     }

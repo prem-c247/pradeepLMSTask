@@ -13,10 +13,16 @@ return new class extends Migration
     {
         Schema::create('teachers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('school_id')->constrained('users')->onDelete('cascade')->comment('school ID of user table');
-            $table->string('experience')->nullable();
-            $table->string('expertises')->nullable()->comment('comma seprated values');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade')->index('user_id_index');
+
+            $table->foreignId('school_id')
+                ->constrained('users', 'id')
+                ->onDelete('cascade')
+                ->comment('primary ID of user table')
+                ->index('school_user_id_index');
+
+            $table->decimal('experience', 2, 1)->nullable();
+            $table->json('expertises')->nullable();
             $table->timestamps();
         });
     }

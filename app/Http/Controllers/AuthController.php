@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Auth\LoginRequest;
+use App\Helpers\CommonHelper;
+use App\Http\Requests\Auth\{
+    ForgotPasswordRequest,
+    LoginRequest,
+    ResetPasswordRequest,
+    VerifyOTPRequest
+};
 use App\Http\Requests\School\SchoolRegisterRequest;
 use App\Http\Requests\Student\StudentRegisterRequest;
 use App\Http\Requests\Teacher\TeacherRegisterRequest;
 use App\Mail\ForgotPasswordMail;
-use App\Models\{InvitationLink, Role, Teacher, User, UserOtp};
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Auth, DB, Mail, Validator};
+use App\Models\{InvitationLink, Role, User, UserOtp};
+use Illuminate\Support\Facades\{Auth, Mail};
+use Exception;
 
 class AuthController extends Controller
 {
@@ -18,229 +24,160 @@ class AuthController extends Controller
         try {
             // Attempt login with credentials
             if (!Auth::attempt($request->only('email', 'password'))) {
-                return response()->json(['status' => false, 'message' => 'Invalid credentials'], 401);
+                return response401(__('message.invalid_credentials'));
             }
-
             // Retrieve the authenticated user
             $user = Auth::user();
 
             // Check if user status is PENDING or INACTIVE
             if (in_array($user->status, [User::PENDING, User::INACTIVE])) {
                 auth()->logout();
-                $message = $user->status == User::PENDING
-                    ? 'Your account is pending. Please contact admin.'
-                    : 'Your account is inactive. Please contact admin.';
+                $message = $user->status === User::PENDING
+                    ? __('message.account_status', ['status' => __('message.pending')])
+                    : __('message.account_status', ['status' => __('message.inactive')]);
 
-                return response()->json(['status' => false, 'message' => $message], 400);
+                return response400($message);
             }
-
             // create the auth token
             $token = $user->createToken('login_token')->plainTextToken;
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Login successful',
-                'token' => $token,
-                'data' => $user
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Getting error while login',
-                'error' => $e->getMessage()
-            ], 500);
+            return response200(__('message.login_success'), ['token' => $token, 'data' => $user]);
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => __('message.login')]), $e->getMessage());
         }
     }
 
-    public function studentRegister(StudentRegisterRequest $request)
+    public function registerStudent(StudentRegisterRequest $request)
     {
-        DB::beginTransaction();
         try {
-            $data = $request->validated();
+            $validatedData = $request->validated();
+            $validatedData['role_id'] = Role::where('id', User::ROLE_STUDENT)->value('id') ?? null;
 
-            $data['role_id'] = Role::where('id', User::ROLE_STUDENT)->value('id') ?? null;
+            // upload profile image by the helper function
+            if ($request->hasFile('profile_image')) {
+                $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile_image'), 'profile-images');
+            }
 
-            $student = User::create($data);
+            $student = User::create($validatedData);
+            $validatedData['roll_number'] = CommonHelper::generateUniqueNumber(10);
+            $student->studentDetails()->create($validatedData);
+            $student->addresses()->create($validatedData);
 
-            $data['roll_number'] = random_int(100000, 999999);
-
-            $student->studentDetails()->create($data);
-
-            DB::commit();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Student registration successful.',
-                'data' => $student,
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'status' => false,
-                'message' => 'Error during registration.',
-                'error' => $e->getMessage(),
-            ], 500);
+            // load the details and addresses
+            $student = $student->load('studentDetails', 'addresses');
+            return response201(__('message.registered', ['name' => __('message.student')]), $student);
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => __('message.registration')]), $e->getMessage());
         }
     }
 
-    public function schoolRegister(SchoolRegisterRequest $request)
+    public function registerSchool(SchoolRegisterRequest $request)
     {
-        DB::beginTransaction();
         try {
-            $data = $request->validated();
+            $validatedData = $request->validated();
+            $validatedData['role_id'] = Role::where('id', User::ROLE_SCHOOL)->value('id') ?? null;
 
-            $data['role_id'] = Role::where('id', User::ROLE_SCHOOL)->value('id') ?? null;
+            // upload profile image by the helper function
+            if ($request->hasFile('profile_image')) {
+                $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile_image'), 'profile-images');
+            }
+            $school = User::create($validatedData);
+            // store additional details
+            $school->schoolDetails()->create($validatedData);
+            // store the address
+            $school->addresses()->create($validatedData);
 
-            $school = User::create($data);
-
-            $school->schoolDetails()->create($data);
-
-            DB::commit();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'School registration successful. Please wait for admin approval.',
-                'data' => $school,
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'status' => false,
-                'message' => 'Error during registration: ' . $e->getMessage(),
-            ], 500);
+            // load the details and addresses
+            $school = $school->load('schoolDetails', 'addresses');
+            return response201(__('message.registered', ['name' => __('message.school')]), $school);
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => __('message.registration')]), $e->getMessage());
         }
     }
 
-    public function teacherRegister(TeacherRegisterRequest $request)
+    public function registerTeacher(TeacherRegisterRequest $request)
     {
-        DB::beginTransaction();
         try {
-            $data = $request->validated();
-
+            $validatedData = $request->validated();
             // Create the user (teacher role)
-            $teacherRoleId = Role::where('id', User::ROLE_TEACHER)->value('id');
+            $teacherRoleId = Role::where('id', User::ROLE_TEACHER)->value('id') ?? 0;
+            $validatedData['role_id'] = $teacherRoleId;
+            $validatedData['status'] = User::ACTIVE;
+            $validatedData['school_id'] = decrypt($validatedData['token']); // teacher will assigned to this school
 
-            $data['role_id'] = $teacherRoleId;
-            $data['status'] = User::ACTIVE;
-            $data['school_id'] = decrypt($data['token']); // teacher will assigned to this school
+            // remove the token form the validatedData array
+            unset($validatedData['token']);
 
-            // remove the token form the data array
-            unset($data['token']);
-
-            $user = User::create($data);
-
+            // upload profile image by the helper function
+            if ($request->hasFile('profile_image')) {
+                $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile_image'), 'profile-images');
+            }
+            $teacher = User::create($validatedData);
             // Create the teacher profile
-            $user->teacherDetails()->create($data);
+            $teacher->teacherDetails()->create($validatedData);
+            // store the address
+            $teacher->addresses()->create($validatedData);
+
+            // load the details and addresses
+            $teacher = $teacher->load('teacherDetails', 'addresses');
 
             // Mark the invitation as registered
-            InvitationLink::where('email', $data['email'])->update([
+            InvitationLink::where('email', $validatedData['email'])->update([
                 'status' => InvitationLink::REGISTERED,
                 'accepted_at' => now()
             ]);
-
-            DB::commit();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Teacher registered successfully.',
-                'data' => $user
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'status' => false,
-                'message' => 'Getting error during teacher registration.',
-                'error' => $e->getMessage()
-            ], 500);
+            return response201(__('message.registered', ['name' => __('message.teacher')]), $teacher);
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => __('message.registration')]), $e->getMessage());
         }
     }
 
-    public function forgot(Request $request)
+    public function forgotPassword(ForgotPasswordRequest $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'email' => 'required|exists:users,email'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json(['status' => false, 'message' => $validator->errors()->first()], 400);
-            }
-
-            $otp = random_int(0000, 9999);
-
+            $otp = CommonHelper::generateUniqueNumber(4);
             UserOtp::updateOrCreate(['email' => $request->email], [
                 'otp' => $otp
             ]);
 
             // Send the OTP via email
             Mail::to($request->email)->send(new ForgotPasswordMail($otp));
-
-            return response()->json(['status' => true, 'message' => 'Forgot successfully send OTP on your registered email', 'otp' => $otp], 200);
-        } catch (\Exception $e) {
-
-            return response()->json(['status' => false, 'message' => 'Error while forget password', 'error' => $e->getMessage()], 500);
+            return response200(__('message.forgot'), ['otp' => $otp]);
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => __('message.forgot_password')]), $e->getMessage());
         }
     }
 
     // verify the OTP after forgot password
-    public function verifyOTPAfterForgot(Request $request)
+    public function verifyOTPAfterForgot(VerifyOTPRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|exists:users,email',
-            'otp'   => 'required|integer'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 400);
-        }
-
         $checkOTP = UserOtp::where(['email' => $request->email, 'otp' => $request->otp])->first();
-
         if (!$checkOTP) {
-            return response()->json(['status' =>  false, 'message' => 'OTP is invalid'], 403);
+            return response400(__('message.invalid_otp'));
         }
-
         $checkOTP->update([
             'verified' => true
         ]);
-
-        return response()->json(['status' =>  true, 'message' => 'OTP verified successfully'], 201);
+        return response200(__('message.verified_otp'));
     }
 
     // reset password after the forgotten
-    public function resetPassword(Request $request)
+    public function resetPassword(ResetPasswordRequest $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'email' => 'required|exists:users,email',
-                'password' => 'required|min:6|confirmed',
-                'password_confirmation' => 'required|min:6',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json(['status' => false, 'message' => $validator->errors()->first()], 400);
-            }
-
             $userOtp = UserOtp::where('email', $request->email)->where('verified', true)->first();
-
             if (!$userOtp) {
-                return response()->json(['status' => false, 'message' => 'OTP is not verified. Please verify the OTP before reseting password'], 400);
+                return response400(__('message.otp_not_verified'));
             }
-
             $user = User::where('email', $request->email)->update(['password' => bcrypt($request->password)]);
 
             // delete the otp data from OTP table
             if ($user) {
                 $userOtp->delete();
             }
-
-            return response()->json(['status' => true, 'message' => 'The password has been reset successfully.'], 200);
-        } catch (\Exception $e) {
-
-            return response()->json(['status' => false, 'message' => 'Error while reseting password', 'error' => $e->getMessage()], 500);
+            return response200(__('message.password_reset_success'));
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => __('message.reset_password')]), $e->getMessage());
         }
     }
 }

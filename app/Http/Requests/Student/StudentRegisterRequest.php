@@ -2,7 +2,11 @@
 
 namespace App\Http\Requests\Student;
 
+use App\Helpers\CommonHelper;
 use App\Http\Requests\BaseFormRequest;
+use App\Rules\ImageUploadRule;
+use App\Rules\NameRule;
+use App\Rules\PasswordRule;
 
 class StudentRegisterRequest extends BaseFormRequest
 {
@@ -21,15 +25,18 @@ class StudentRegisterRequest extends BaseFormRequest
      */
     public function rules(): array
     {
-        return [
-            'name' => 'required|string|max:255',
+        $addressValidationArray = CommonHelper::getAddressValidationRules();
+
+        $rules = [
+            'first_name' => ['required', 'string', 'max:50', new NameRule()],
+            'last_name' => ['required', 'string', 'max:50', new NameRule()],
             'email' => 'required|email|unique:users|max:255',
             'phone' => 'nullable|digits_between:10,12|unique:users',
-            'password' => 'required|min:6',
-            'address' => 'nullable|string|max:255',
-            'school_id' => 'required|integer|exists:users,id', // relation with school type pf user id
+            'password' => ['required', new PasswordRule],
+            'school_id' => 'required|integer|exists:users,id',
             'parents_name' => 'nullable|string|max:255',
-            'profile' => 'nullable|image|mimes:png,jpg|max:2024',
+            'profile_image' =>  ['nullable', new ImageUploadRule()],
         ];
+        return array_merge($addressValidationArray, $rules);
     }
 }

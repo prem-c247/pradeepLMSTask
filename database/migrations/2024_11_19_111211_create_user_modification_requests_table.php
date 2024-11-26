@@ -13,22 +13,23 @@ return new class extends Migration
     {
         Schema::create('user_modification_requests', function (Blueprint $table) {
             $table->id();
-            $table->enum('type', ['edit', 'delete']);
-            $table->unsignedBigInteger('requested_by');
-            $table->unsignedBigInteger('requested_to');
-            $table->unsignedBigInteger('target_id');
-            $table->string('name')->nullable();
-            $table->string('email')->nullable()->unique();
-            $table->string('phone')->nullable()->unique();
-            $table->string('profile')->nullable();
-            $table->string('address')->nullable();
-            $table->string('owner_name')->nullable();
-            $table->string('roll_number')->nullable();
-            $table->string('parents_name')->nullable();
-            $table->string('experience')->nullable();
-            $table->string('expertises')->nullable();
-            $table->enum('user_status', ['Active', 'Inactive'])->nullable();
-            $table->enum('status', ['Pending', 'Approved', 'Rejected'])->default('Pending');
+            $table->enum('type', ['EDIT', 'DELETE']);
+            $table->unsignedBigInteger('requested_by')->index();
+            $table->unsignedBigInteger('requested_to')->index();
+            $table->unsignedBigInteger('target_id')->index();
+            $table->string('first_name', 50)->nullable();
+            $table->string('last_name', 50)->nullable();
+            $table->string('email', 50)->nullable()->unique();
+            $table->string('phone', 12)->nullable()->unique();
+            $table->string('profile', 50)->nullable();
+            $table->json('address')->nullable()->comment('full address in json');
+            $table->string('owner_name', 50)->nullable();
+            $table->string('roll_number', 20)->nullable();
+            $table->string('parents_name', 50)->nullable();
+            $table->decimal('experience', 2, 1)->nullable();
+            $table->json('expertises')->nullable();
+            $table->enum('user_status', ['ACTIVE', 'INACTIVE'])->nullable();
+            $table->enum('status', ['PENDING', 'APPROVED', 'REJECTED'])->default('PENDING');
             $table->timestamps();
         });
     }

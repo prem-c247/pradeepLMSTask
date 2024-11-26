@@ -6,12 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserModificationRequest extends Model
 {
+    // type
+    public const EDIT = 'EDIT';
+    public const DELETE = 'DELETE';
+
+    // status
+    public const PENDING = 'PENDING';
+    public const APPROVED = 'APPROVED';
+    public const REJECTED = 'REJECTED';
+
     protected $fillable = [
         'type',
         'requested_by',
         'requested_to',
         'target_id',
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'phone',
         'profile',
@@ -26,13 +36,10 @@ class UserModificationRequest extends Model
     ];
 
     protected $casts = [
-        'requested_by' => 'integer',
-        'requested_to' => 'integer',
-        'target_id' => 'integer',
-        'status' => 'string',
-        'user_status' => 'string',
+        'address' => 'array',
+        'expertises' => 'array',
     ];
-    
+
 
     // Relationship: Requested by user (who made the request)
     public function requestedBy()

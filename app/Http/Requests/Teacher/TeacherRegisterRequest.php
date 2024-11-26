@@ -2,7 +2,11 @@
 
 namespace App\Http\Requests\Teacher;
 
+use App\Helpers\CommonHelper;
 use App\Http\Requests\BaseFormRequest;
+use App\Rules\ImageUploadRule;
+use App\Rules\NameRule;
+use App\Rules\PasswordRule;
 
 class TeacherRegisterRequest extends BaseFormRequest
 {
@@ -21,17 +25,20 @@ class TeacherRegisterRequest extends BaseFormRequest
      */
     public function rules(): array
     {
-        return [
-            'token' => 'required|string',
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users|max:255',
+        $addressValidationArray = CommonHelper::getAddressValidationRules();
+
+        $rules = [
+            'token' => 'required|string|max:255',
+            'first_name' => ['required', 'string', 'max:50', new NameRule()],
+            'last_name' => ['required', 'string', 'max:50', new NameRule()],
+            'email' => 'required|email|unique:users|max:100',
             'phone' => 'nullable|digits_between:10,12|unique:users',
-            'password' => 'required|min:6',
-            'address' => 'nullable|string|max:255',
-            'profile' => 'nullable|image|mimes:png,jpg|max:2024',
-            
-            'experience' => 'nullable|string|max:255',
-            'expertises' => 'nullable|string', // comma separated values
+            'password' => ['required', new PasswordRule],
+            'profile_image' =>  ['nullable', new ImageUploadRule()],
+
+            'experience' => 'nullable|numeric',
+            'expertises' => 'nullable|array',
         ];
+        return array_merge($addressValidationArray, $rules);
     }
 }

@@ -16,22 +16,15 @@ return new class extends Migration
             $table->unsignedBigInteger('role_id')->nullable()->index();
 
             // $table->foreignId('role_id')->nullable()->constrained('roles')->onDelete('set null');
-            $table->string('name')->nullable();
-            $table->string('email')->unique();
-            $table->string('phone')->unique()->nullable();
-            $table->string('profile')->nullable();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('first_name', 50)->nullable()->index('users_first_name_index');
+            $table->string('last_name', 50)->nullable()->index('users_last_name_index');
+            $table->string('email', 100)->unique()->index();
+            $table->string('phone', 12)->unique()->nullable()->index();
+            $table->string('profile', 50)->nullable();
             $table->string('password');
-            $table->enum('status', ['Pending', 'Active', 'Inactive'])->default('Pending');
-            $table->string('address')->nullable();
-            $table->rememberToken();
+            $table->enum('status', ['PENDING', 'ACTIVE', 'INACTIVE'])->default('PENDING');
+            $table->unsignedBigInteger('address_id')->nullable();
             $table->timestamps();
-        });
-
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
         });
 
         Schema::create('sessions', function (Blueprint $table) {
@@ -50,7 +43,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
     }
 };

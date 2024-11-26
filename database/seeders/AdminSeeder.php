@@ -16,7 +16,8 @@ class AdminSeeder extends Seeder
     {
         User::updateOrCreate(['id' => 1], [
             'role_id' => 1, // Admin role Id
-            'name' => 'Admin',
+            'last_name' => 'Admin',
+            'last_name' => 'Admin',
             'email' => 'admin@gmail.com',
             'password' => 123456,
             'status' => 'Active'

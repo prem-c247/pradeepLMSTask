@@ -22,8 +22,15 @@ class LoginRequest extends BaseFormRequest
     public function rules(): array
     {
         return [
-            'email'     => 'required|email|exists:users',
+            'email'     => 'required|email|exists:users|max:100',
             'password'  => 'required'
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.exists'   => __('message.not_exists', ['name' => 'email']),
         ];
     }
 }

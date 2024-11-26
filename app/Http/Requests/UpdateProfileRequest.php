@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\ImageUploadRule;
+use App\Rules\NameRule;
+
 class UpdateProfileRequest extends BaseFormRequest
 {
     /**
@@ -22,11 +25,11 @@ class UpdateProfileRequest extends BaseFormRequest
         $user    =   auth()->user();
 
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
+            'first_name' => ['required', 'string', 'max:50', new NameRule()],
+            'last_name' => ['required', 'string', 'max:50', new NameRule()],
+            // 'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
             'phone' => 'sometimes|digits_between:10,12|unique:users,phone,' . $user->id,
-            'address' => 'nullable|string|max:255',
-            'profile' => 'nullable|mimes:png,jpg|max:2024',
+            'profile_image' => ['nullable', new ImageUploadRule()],
         ];
     }
 }

@@ -2,6 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\User;
+use App\Models\UserModificationRequest;
+use App\Rules\ImageUploadRule;
+use App\Rules\NameRule;
 use App\Rules\UniqueAcrossTables;
 
 class CreateUserModificationRequest extends BaseFormRequest
@@ -24,9 +28,10 @@ class CreateUserModificationRequest extends BaseFormRequest
         $id = request('target_id');
 
         return [
-            'type' => 'required|in:edit,delete',
+            'type' => 'required|in:' . UserModificationRequest::EDIT . ',' . UserModificationRequest::DELETE,
             'target_id' => 'required|exists:users,id',
-            'name' => 'sometimes|string|max:255',
+            'first_name' => ['sometimes', 'string', 'max:50', new NameRule()],
+            'last_name' => ['sometimes', 'string', 'max:50', new NameRule()],
             'email' => [
                 'sometimes',
                 'email',
@@ -37,14 +42,14 @@ class CreateUserModificationRequest extends BaseFormRequest
                 'digits_between:10,12',
                 new UniqueAcrossTables('phone', ['users', 'user_modification_requests'], $id),
             ],
-            'profile' => 'sometimes|image|mimes:png,jpg|max:2048',
-            'address' => 'sometimes|string|max:255',
-            'owner_name' => 'sometimes|string|max:255',
-            'roll_number' => 'sometimes|string|max:255',
-            'parents_name' => 'sometimes|string|max:255',
-            'experience' => 'sometimes|string|max:255',
-            'expertises' => 'sometimes|string|max:255',
-            'user_status' => 'sometimes|in:Active,Inactive',
+            'profile' =>  ['nullable', new ImageUploadRule()],
+            // 'address' => 'nullable|array',
+            'owner_name' => ['sometimes', 'string', 'max:50', new NameRule()],
+            'roll_number' => 'sometimes|string|max:20',
+            'parents_name' => ['sometimes', 'string', 'max:50', new NameRule()],
+            'experience' => 'sometimes|numeric',
+            'expertises' => 'sometimes|array',
+            'user_status' => 'sometimes|in:' . User::ACTIVE . ',' . User::INACTIVE
         ];
     }
 }

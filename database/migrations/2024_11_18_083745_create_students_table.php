@@ -13,11 +13,16 @@ return new class extends Migration
     {
         Schema::create('students', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('school_id')->constrained('users')->onDelete('cascade')->comment('school ID of user table');
-            $table->string('roll_number')->nullable();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade')->index();
+            $table->foreignId('school_id')
+                ->constrained('users', 'id')
+                ->onDelete('cascade')
+                ->comment('primary ID of user table')
+                ->index('user_school_id');
+
+            $table->string('roll_number', 20)->nullable()->index();
             $table->date('dob')->nullable();
-            $table->string('parents_name')->nullable();
+            $table->string('parents_name', 50)->nullable();
             $table->timestamps();
         });
     }

@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('user_otps', function (Blueprint $table) {
             $table->id();
-            $table->string('email');
-            $table->string('otp');
+            $table->string('email', 50)->index();
+            $table->string('otp', 8);
             $table->boolean('verified')->default(false);
             $table->dateTime('expire_at')->nullable();
             $table->timestamps();

@@ -3,23 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\CommonHelper;
+use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Auth, Hash, Validator};
+use Exception;
+use Illuminate\Support\Facades\{Auth, Hash};
 
 class ProfileController extends Controller
 {
     public function getProfile()
     {
-        $user       =   auth()->user();
-
-        return response()->json(['status' => true, 'message' => 'Get profile successfully', 'data' => $user]);
+        try {
+            $user = auth()->user();
+            return response200(__('message.fetched', ['name' => 'profile']), $user);
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => 'profile']), $e->getMessage());
+        }
     }
 
     public function updateProfile(UpdateProfileRequest $request)
     {
         $user = auth()->user();
-
         $data = $request->validated();
 
         // upload profile image by the helper function
@@ -28,34 +31,21 @@ class ProfileController extends Controller
         }
 
         $user->update($data);
-
-        return response()->json(['status' => true, 'message' => 'Profile updated successfully', 'data' => $user]);
+        return response200(__('message.updated', ['name' => 'profile']), $user);
     }
 
-    public function changePassword(Request $request)
+    public function changePassword(ChangePasswordRequest $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'current_password' => 'required',
-                'password' => 'required|min:6|confirmed',
-                'password_confirmation' => 'required|min:6'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json(['status' => false, 'message' => $validator->errors()->first()], 400);
-            }
-
             $user = Auth::user();
-
             if (!Hash::check($request->current_password, $user->password)) {
-                return response()->json(['status' => false, 'message' => 'Old password is incorrect.'], 401);
+                return response401(__('message.incorrect_password'));
             }
 
             $user->update(['password' => $request->password]);
-
-            return response()->json(['status' => true, 'message' => 'The password has been changed successfully.'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Error while updating password', 'error' => $e->getMessage()], 500);
+            return response200(__('message.updated', ['name' => 'password']));
+        } catch (Exception $e) {
+            return response500(__('message.server_error', ['name' => 'updation']), $e->getMessage());
         }
     }
 }

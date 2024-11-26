@@ -2,31 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateUserStatusRequest;
 use App\Models\{User};
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Validator};
 
 class UserController extends Controller
 {
-    public function UpdateUserStatus(Request $request)
+    public function UpdateUserStatus(UpdateUserStatusRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required|integer|exists:users,id',
-            'status' => 'required|string|in:' . User::ACTIVE . ',' . User::INACTIVE
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 404);
-        }
-
         $user = User::find($request->user_id);
         $user->update(['status' => $request->status]);
 
-        $currentStatus = 'deactived';
         if ($user->status === User::ACTIVE) {
-            $currentStatus = 'activated';
+            $message = __('message.actived', ['name' => __('message.user')]);
+        } else {
+            $message = __('message.deactived', ['name' => __('message.user')]);
         }
 
-        return response()->json(['status' => true, 'message' => "User $currentStatus successfully", 'data' => $user], 200);
+        return response200($message, $user);
     }
 }

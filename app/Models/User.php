@@ -13,9 +13,9 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     // Status
-    public const ACTIVE = 'Active';
-    public const INACTIVE = 'Inactive';
-    public const PENDING = 'Pending';
+    public const ACTIVE = 'ACTIVE';
+    public const INACTIVE = 'INACTIVE';
+    public const PENDING = 'PENDING';
 
     // Roles
     public const ROLE_ADMIN = 1;
@@ -25,12 +25,13 @@ class User extends Authenticatable
 
 
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'role_id',
         'email',
         'phone',
         'profile',
-        'address',
+        'address_id',
         'password',
         'status'
     ];
@@ -42,9 +43,7 @@ class User extends Authenticatable
         return ['email_verified_at' => 'datetime', 'password' => 'hashed'];
     }
 
-    // =======================++++++++++++==============
-    // +++++++++++++ Accessors +++++++++++++++++++++
-    // =======================++++++++++++==============
+    // Accessors
     public function getProfileAttribute($value)
     {
         if ($value) {
@@ -55,10 +54,7 @@ class User extends Authenticatable
         return asset($defaultImg);
     }
 
-
-    // =======================++++++++++++==============
-    // +++++++++++++ Relations +++++++++++++++++++++
-    // =======================++++++++++++==============
+    // Relations
     public function role()
     {
         return $this->belongsTo(Role::class);
@@ -79,9 +75,12 @@ class User extends Authenticatable
         return $this->hasOne(School::class);
     }
 
-    // =======================++++++++++++==============
-    // +++++++++++++ Scopes +++++++++++++++++++++
-    // =======================++++++++++++==============
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    // Scopes
     public function scopeTeacher($query)
     {
         return $query->where('role_id', self::ROLE_TEACHER);
@@ -95,5 +94,11 @@ class User extends Authenticatable
     public function scopeStudent($query)
     {
         return $query->where('role_id', self::ROLE_STUDENT);
+    }
+
+    // Check the logged in user is student
+    public function isStudent()
+    {
+        return $this->role === self::ROLE_STUDENT;
     }
 }

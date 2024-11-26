@@ -10,9 +10,7 @@ class Student extends Model
     protected $hidden = ['created_at', 'updated_at'];
 
 
-    // =======================++++++++++++==============
-    // +++++++++++++ Relations +++++++++++++++++++++
-    // =======================++++++++++++==============
+    // Relations
     public function school()
     {
         return $this->belongsTo(User::class);
