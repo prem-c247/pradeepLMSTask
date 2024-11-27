@@ -43,7 +43,6 @@ class CreateUserModificationRequest extends BaseFormRequest
                 new UniqueAcrossTables('phone', ['users', 'user_modification_requests'], $id),
             ],
             'profile' =>  ['nullable', new ImageUploadRule()],
-            // 'address' => 'nullable|array',
             'owner_name' => ['sometimes', 'string', 'max:50', new NameRule()],
             'roll_number' => 'sometimes|string|max:20',
             'parents_name' => ['sometimes', 'string', 'max:50', new NameRule()],

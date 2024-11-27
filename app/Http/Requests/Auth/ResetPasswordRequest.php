@@ -23,7 +23,7 @@ class ResetPasswordRequest extends BaseFormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|exists:users,email|max:100',
+            'email' => 'required|email',
             'password' => ['required', 'confirmed', new PasswordRule],
             'password_confirmation' => 'required',
         ];

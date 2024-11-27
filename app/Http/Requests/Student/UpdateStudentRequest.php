@@ -29,7 +29,7 @@ class UpdateStudentRequest extends BaseFormRequest
         $rules = [
             'first_name' => ['sometimes', 'string', 'max:50', new NameRule()],
             'last_name' => ['sometimes', 'string', 'max:50', new NameRule()],
-            'phone' => 'sometimes|digits_between:10,12|unique:users,phone,' . $this->route('id'),
+            'phone' => 'sometimes|digits_between:10,12|unique:users,phone,' . $this->route('studentId'),
             'profile' =>  ['nullable', new ImageUploadRule()],
 
             'roll_number' => 'sometimes|string|max:20',

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Auth;
+namespace App\Http\Requests\Teacher;
 
 use App\Http\Requests\BaseFormRequest;
 
-class VerifyOTPRequest extends BaseFormRequest
+class SendInviteLinkRequest extends BaseFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,8 +22,7 @@ class VerifyOTPRequest extends BaseFormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|email',
-            'otp' => 'required|integer|digits:4'
+            'email' => 'required|email|max:100'
         ];
     }
 }

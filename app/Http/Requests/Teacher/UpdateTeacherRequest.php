@@ -29,7 +29,7 @@ class UpdateTeacherRequest extends BaseFormRequest
         $rules = [
             'first_name' => ['sometimes', 'string', 'max:50', new NameRule()],
             'last_name' => ['sometimes', 'string', 'max:50', new NameRule()],
-            'phone' => 'sometimes|digits_between:10,12|unique:users,phone,' . $this->route('teacherID'),
+            'phone' => 'sometimes|digits_between:10,12|unique:users,phone,' . $this->route('teacherId'),
             'profile' =>  ['nullable', new ImageUploadRule()],
             'experience' => 'sometimes|numeric',
             'expertises' => 'sometimes|array',

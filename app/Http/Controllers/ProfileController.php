@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\{Auth, Hash};
 
 class ProfileController extends Controller
 {
+    /**
+     * getProfile: Get user's basic informations
+     *
+     * @return void
+     */
     public function getProfile()
     {
         try {
@@ -20,20 +25,35 @@ class ProfileController extends Controller
         }
     }
 
+    /**
+     * updateProfile: Update the user's basic informations 
+     *
+     * @param  mixed $request
+     * @return void
+     */
     public function updateProfile(UpdateProfileRequest $request)
     {
         $user = auth()->user();
-        $data = $request->validated();
+        $validatedData = $request->validated();
 
         // upload profile image by the helper function
         if ($request->hasFile('profile_image')) {
-            $data['profile'] = CommonHelper::fileUpload($request->file('profile_image'), 'profile-images');
-        }
+            $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile_image'), PROFILE_IMAGE_DIR);
 
-        $user->update($data);
+            // remove old image (get the last segment of URL)
+            $oldImageName = substr(strrchr($user->profile, "/"), 1);
+            CommonHelper::deleteImageByName($oldImageName, PROFILE_IMAGE_DIR);
+        }
+        $user->update($validatedData);
         return response200(__('message.updated', ['name' => 'profile']), $user);
     }
 
+    /**
+     * changePassword: Update the user's password
+     *
+     * @param  mixed $request
+     * @return void
+     */
     public function changePassword(ChangePasswordRequest $request)
     {
         try {

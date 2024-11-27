@@ -10,13 +10,10 @@ return [
     "registered" => ":name has been registered successfully",
     "approved" => ":name has been approved successfully",
     "processed" => ":name has already been processed",
-
     "actived" => ":name has been activated successfully",
     "deactived" => ":name has been deactivated successfully",
-
     "not_found" => ":name not found",
     "not_exists" => "The :name does not exist in our records",
-
     "not_access" => "You do not have access to perform this task",
 
     "route" => "Route",
@@ -40,15 +37,13 @@ return [
     "updation" => "updation",
     "password" => "password",
     "sending_mail" => "sending mail",
-
     'server_error' => 'An error occurred while processing the :name. Please try again later',
-
-    'account_status' => 'Your account is :status. Please contact admin',
-
+    
     // status
     'pending' => 'Pending',
     'active' => 'Active',
     'inactive' => 'Inactive',
+    'account_status' => 'Your account is :status. Please contact admin',
 
     // Auth
     'invalid_credentials' => 'Invalid credentials',
@@ -62,4 +57,6 @@ return [
     'incorrect_password' => 'Current password is incorrect',
 
     'send_invite' => 'Invitation link has been sent to this email address successfully',
+    'file_not_null' => 'File can not be null',
+    'file_upload_error' => 'File upload failed',
 ];

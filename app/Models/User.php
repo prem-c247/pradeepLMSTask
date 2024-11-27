@@ -47,7 +47,8 @@ class User extends Authenticatable
     public function getProfileAttribute($value)
     {
         if ($value) {
-            return asset('uploads/profile-images/' . $value);
+            $filePath = UPLOAD_PATH . PROFILE_IMAGE_DIR . '/' . $value;
+            return asset($filePath);
         }
 
         $defaultImg = NO_PROFILE;

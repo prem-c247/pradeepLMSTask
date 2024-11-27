@@ -19,6 +19,12 @@ use Exception;
 
 class AuthController extends Controller
 {
+    /**
+     * login: Validate the login with user credentials (email and password)
+     * After the success login user will get the authorization bearer token for the authentication
+     * @param  mixed $request
+     * @return void
+     */
     public function login(LoginRequest $request)
     {
         try {
@@ -40,13 +46,18 @@ class AuthController extends Controller
             }
             // create the auth token
             $token = $user->createToken('login_token')->plainTextToken;
-
             return response200(__('message.login_success'), ['token' => $token, 'data' => $user]);
         } catch (Exception $e) {
             return response500(__('message.server_error', ['name' => __('message.login')]), $e->getMessage());
         }
     }
 
+    /**
+     * registerStudent: Register students, Assign the student role
+     * Generate unique roll number for each student
+     * @param  mixed $request
+     * @return void
+     */
     public function registerStudent(StudentRegisterRequest $request)
     {
         try {
@@ -55,9 +66,8 @@ class AuthController extends Controller
 
             // upload profile image by the helper function
             if ($request->hasFile('profile_image')) {
-                $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile_image'), 'profile-images');
+                $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile_image'), PROFILE_IMAGE_DIR);
             }
-
             $student = User::create($validatedData);
             $validatedData['roll_number'] = CommonHelper::generateUniqueNumber(10);
             $student->studentDetails()->create($validatedData);
@@ -71,6 +81,12 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * registerSchool: Registration of school types of user
+     *
+     * @param  mixed $request
+     * @return void
+     */
     public function registerSchool(SchoolRegisterRequest $request)
     {
         try {
@@ -79,7 +95,7 @@ class AuthController extends Controller
 
             // upload profile image by the helper function
             if ($request->hasFile('profile_image')) {
-                $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile_image'), 'profile-images');
+                $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile_image'), PROFILE_IMAGE_DIR);
             }
             $school = User::create($validatedData);
             // store additional details
@@ -95,6 +111,12 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * registerTeacher: Registration of teacher types of user
+     *
+     * @param  mixed $request
+     * @return void
+     */
     public function registerTeacher(TeacherRegisterRequest $request)
     {
         try {
@@ -110,7 +132,7 @@ class AuthController extends Controller
 
             // upload profile image by the helper function
             if ($request->hasFile('profile_image')) {
-                $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile_image'), 'profile-images');
+                $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile_image'), PROFILE_IMAGE_DIR);
             }
             $teacher = User::create($validatedData);
             // Create the teacher profile
@@ -132,6 +154,12 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * forgotPassword: Forgot user password
+     * In this process we will store the OTP alongwith email in the user_opts table
+     * @param  mixed $request
+     * @return void
+     */
     public function forgotPassword(ForgotPasswordRequest $request)
     {
         try {
@@ -148,7 +176,12 @@ class AuthController extends Controller
         }
     }
 
-    // verify the OTP after forgot password
+    /**
+     * verifyOTPAfterForgot: Verified the OTP after forgotten password  
+     * after the verification we will set "verified = true" in the user_otps table
+     * @param  mixed $request
+     * @return void
+     */
     public function verifyOTPAfterForgot(VerifyOTPRequest $request)
     {
         $checkOTP = UserOtp::where(['email' => $request->email, 'otp' => $request->otp])->first();
@@ -161,7 +194,12 @@ class AuthController extends Controller
         return response200(__('message.verified_otp'));
     }
 
-    // reset password after the forgotten
+    /**
+     * resetPassword: Reset password after the forgotten
+     * After updating password, we have removed the user otp data form user_otps table
+     * @param  mixed $request
+     * @return void
+     */
     public function resetPassword(ResetPasswordRequest $request)
     {
         try {

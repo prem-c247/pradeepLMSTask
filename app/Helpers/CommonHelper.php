@@ -2,41 +2,53 @@
 
 namespace App\Helpers;
 
+use App\Exceptions\FileUploadException;
 use Exception;
 use Illuminate\Support\Str;
 
 class CommonHelper
 {
+    /**
+     * fileUpload: Upload the file in given directory
+     *
+     * @param  mixed $file
+     * @param  mixed $dir
+     * @return void
+     */
     public static function fileUpload($file, $dir)
     {
         try {
-            if (!empty($file)) {
-                $fileName = time() . Str::random(4) . "." . $file->getClientOriginalExtension();
-                $uploadPath = public_path(UPLOAD_PATH . $dir);
-
-                if (!file_exists($uploadPath)) {
-                    mkdir($uploadPath, 0777, true);
-                }
-
-                $file->move($uploadPath, $fileName);
-                return $fileName;
+            if (empty($file)) {
+                throw new FileUploadException(__('message.file_not_null'));
             }
-            return false;
+
+            $fileName = time() . Str::random(4) . "." . $file->getClientOriginalExtension();
+            $uploadPath = public_path('uploads/' . $dir);
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
+            }
+
+            $file->move($uploadPath, $fileName);
+            return $fileName;
         } catch (Exception $e) {
-            return false;
+            throw new FileUploadException(__('message.file_upload_error'));
         }
     }
 
+    /**
+     * deleteImageByUrl: Delete the image file by the given URL
+     * Prevent to remove DEFAULT images
+     * @param  mixed $fileUrl
+     * @return void
+     */
     public static function deleteImageByUrl($fileUrl)
     {
         // do not remove default images
         $defaultUserImage = NO_PROFILE;
         $defaultImg = DEFAULT_IMAGE;
-
         if ($fileUrl === asset($defaultUserImage)) {
             return false;
         }
-
         if ($fileUrl === asset($defaultImg)) {
             return false;
         }
@@ -44,7 +56,6 @@ class CommonHelper
         $appUrl = config('app.url');
         $relativePath = str_replace($appUrl, '', $fileUrl);
         $localPath = public_path($relativePath);
-
         if (file_exists($localPath)) {
             unlink($localPath);
             return true;
@@ -53,6 +64,13 @@ class CommonHelper
         }
     }
 
+    /**
+     * deleteImageByName: Delete the file form the given fileName and directory name
+     *
+     * @param  mixed $fileName
+     * @param  mixed $directory
+     * @return void
+     */
     public static function deleteImageByName($fileName, $directory)
     {
         $localPath = public_path(UPLOAD_PATH . $directory . '/' . $fileName);
@@ -77,7 +95,6 @@ class CommonHelper
         if ($length < 1 || $length > 10) {
             throw new Exception('Length must be between 1 and 10.');
         }
-
         $digits = range(0, 9);
         shuffle($digits);
 
@@ -86,10 +103,14 @@ class CommonHelper
             $nonZeroIndex = array_search(max(array_slice($digits, 1)), $digits);
             [$digits[0], $digits[$nonZeroIndex]] = [$digits[$nonZeroIndex], $digits[0]];
         }
-
         return (int)implode('', array_slice($digits, 0, $length));
     }
-    
+
+    /**
+     * getAddressValidationRules: Get all the necessary validation rules for the address 
+     *
+     * @return void
+     */
     public static function getAddressValidationRules()
     {
         return [

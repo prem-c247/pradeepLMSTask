@@ -4,7 +4,12 @@ namespace App\Http\Controllers;
 
 abstract class Controller
 {
-    // Manage Not Found response for the given data lang name attribute
+    /**
+     * notFound: Manage Not Found response for the given lang name attribute    
+     *
+     * @param  mixed $labelName
+     * @return void
+     */
     protected function notFound($labelName)
     {
         $label = 'message.' . $labelName;

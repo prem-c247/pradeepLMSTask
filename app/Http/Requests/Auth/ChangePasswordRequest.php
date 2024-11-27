@@ -25,7 +25,7 @@ class ChangePasswordRequest extends BaseFormRequest
         return [
             'current_password' => 'required',
             'password' => ['required', 'confirmed', new PasswordRule],
-            'password_confirmation' => 'required|min:6|max:255'
+            'password_confirmation' => 'required'
         ];
     }
 }

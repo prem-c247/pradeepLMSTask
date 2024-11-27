@@ -1,6 +1,17 @@
 <?php
 
-use App\Http\Controllers\{AuthController, ExamController, ProfileController, QuestionController, SchoolController, StudentController, SubjectController, TeacherController, UserController, UserModificationController};
+use App\Http\Controllers\{
+    AuthController,
+    ExamController,
+    ProfileController,
+    QuestionController,
+    SchoolController,
+    StudentController,
+    SubjectController,
+    TeacherController,
+    UserController,
+    UserModificationController
+};
 use Illuminate\Support\Facades\Route;
 
 
@@ -27,58 +38,58 @@ Route::middleware('auth:sanctum')->group(function () {
     // Teachers
     Route::prefix('teachers')->group(function () {
         Route::get('/', [TeacherController::class, 'index']);
-        Route::get('{teacherID}', [TeacherController::class, 'details']);
-        Route::post('{teacherID}', [TeacherController::class, 'update']);
-        Route::delete('{teacherID}', [TeacherController::class, 'delete']);
+        Route::get('{teacherId}', [TeacherController::class, 'details']);
+        Route::post('{teacherId}', [TeacherController::class, 'update']);
+        Route::delete('{teacherId}', [TeacherController::class, 'delete']);
         Route::post('/invitation-link/send', [TeacherController::class, 'SendInviteLinkToTeacher']); // Send invite link to teacher
     });
 
     // School
     Route::prefix('schools')->group(function () {
         Route::get('/', [SchoolController::class, 'index']);
-        Route::get('{id}', [SchoolController::class, 'details']);
-        Route::post('{id}', [SchoolController::class, 'update']);
-        Route::delete('{id}', [SchoolController::class, 'delete']);
+        Route::get('{schoolId}', [SchoolController::class, 'details']);
+        Route::post('{schoolId}', [SchoolController::class, 'update']);
+        Route::delete('{schoolId}', [SchoolController::class, 'delete']);
     });
 
     // Student
     Route::prefix('students')->group(function () {
         Route::get('/', [StudentController::class, 'index']);
-        Route::get('{id}', [StudentController::class, 'details']);
-        Route::post('{id}', [StudentController::class, 'update']);
-        Route::delete('{id}', [StudentController::class, 'delete']);
+        Route::get('{studentId}', [StudentController::class, 'details']);
+        Route::post('{studentId}', [StudentController::class, 'update']);
+        Route::delete('{studentId}', [StudentController::class, 'delete']);
     });
 
     // User modification requests
     Route::prefix('modification-request')->group(function () {
         Route::get('/', [UserModificationController::class, 'index']);
         Route::post('/create', [UserModificationController::class, 'createRequest']);
-        Route::post('/approved/{id}', [UserModificationController::class, 'approvedRequest']);
+        Route::post('/approved/{requestId}', [UserModificationController::class, 'approvedRequest']);
     });
 
     // Subjects
     Route::prefix('subjects')->group(function () {
         Route::get('/', [SubjectController::class, 'index']);
         Route::post('/', [SubjectController::class, 'store']);
-        Route::get('/{id}', [SubjectController::class, 'show']);
-        Route::put('/{id}', [SubjectController::class, 'update']);
-        Route::delete('/{id}', [SubjectController::class, 'delete']);
+        Route::get('/{subjectId}', [SubjectController::class, 'show']);
+        Route::put('/{subjectId}', [SubjectController::class, 'update']);
+        Route::delete('/{subjectId}', [SubjectController::class, 'delete']);
     });
 
     // Questions
     Route::prefix('questions')->group(function () {
         Route::get('/{subjectId}', [QuestionController::class, 'index']);
         Route::post('/', [QuestionController::class, 'store']);
-        Route::get('/details/{id}', [QuestionController::class, 'show']);
-        Route::put('/{id}', [QuestionController::class, 'update']);
-        Route::delete('/{id}', [QuestionController::class, 'delete']);
+        Route::get('/details/{questionId}', [QuestionController::class, 'show']);
+        Route::put('/{questionId}', [QuestionController::class, 'update']);
+        Route::delete('/{questionId}', [QuestionController::class, 'delete']);
     });
 
-    // Exam
+    // Exams
     Route::prefix('exams')->group(function () {
         Route::get('/', [ExamController::class, 'index']);
         Route::get('/attempt/{subjectId}', [ExamController::class, 'attemptExam']);
-        Route::get('/{id}', [ExamController::class, 'show']);
+        Route::get('/{examId}', [ExamController::class, 'show']);
         Route::post('/', [ExamController::class, 'storeExam']);
     });
 });

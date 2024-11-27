@@ -8,7 +8,12 @@ use Exception;
 
 class ExamController extends Controller
 {
-    // Get the questions by the subject Id
+    /**
+     * attemptExam: Get the questions by the subject Id for attempting exam  
+     *
+     * @param  mixed $subjectId
+     * @return void
+     */
     public function attemptExam($subjectId)
     {
         $questions = Question::where('subject_id', $subjectId)->get([
@@ -17,28 +22,34 @@ class ExamController extends Controller
             'question_text',
             'options'
         ]);
-
         if ($questions->isEmpty()) {
             return $this->notFound('question');
         }
-
         return response200(__('message.fetched', ['name' => __('message.question')]), $questions);
     }
 
-    // The attempted exams by the student
+    /**
+     * index: The attempted exams by the authenticated user ID
+     *
+     * @return void
+     */
     public function index()
     {
         $exams  = Exam::where('student_id', auth()->id())
             ->with(['student', 'subject', 'responses.question'])
             ->get();
-
         if ($exams->isEmpty()) {
             return $this->notFound('exam');
         }
-
         return response200(__('message.fetched', ['name' => __('message.exam')]), $exams);
     }
 
+    /**
+     * storeExam: Store the exam attemepted by the student
+     *
+     * @param  mixed $request
+     * @return void
+     */
     public function storeExam(StoreExamRequest $request)
     {
         try {
@@ -47,7 +58,6 @@ class ExamController extends Controller
                 'student_id' => auth()->id(),
                 'subject_id' => $validated['subject_id'],
             ]);
-
             $responses = array_map(function ($response) use ($exam) {
                 return [
                     'exam_id' => $exam->id,
@@ -59,21 +69,24 @@ class ExamController extends Controller
             }, $validated['responses']);
 
             ExamResponse::insert($responses);
-
             return response201(__('message.submitted', ['name' => __('message.exam')]), $exam->load('responses'));
         } catch (Exception $e) {
             return response500(__('message.server_error', ['name' => __('message.submission')]), $e->getMessage());
         }
     }
 
-    public function show($id)
+    /**
+     * show: Get the attempted exam details with question and choosed option
+     *
+     * @param  mixed $examId
+     * @return void
+     */
+    public function show($examId)
     {
-        $exam = Exam::with(['student', 'subject', 'responses.question'])->find($id);
-
+        $exam = Exam::with(['student', 'subject', 'responses.question'])->find($examId);
         if (!$exam) {
             return $this->notFound('exam');
         }
-
         return response200(__('message.fetched', ['name' => __('message.exam')]), $exam);
     }
 }
