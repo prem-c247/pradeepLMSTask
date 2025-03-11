@@ -12,8 +12,10 @@ use App\Http\Controllers\{
     UserController,
     UserModificationController
 };
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Route;
 
+use function Laravel\Prompts\password;
 
 // If user trying to access auth routes it given response
 Route::get('login', function () {
@@ -33,7 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('get-profile', [ProfileController::class, 'getProfile']);
     Route::post('update-profile', [ProfileController::class, 'updateProfile']);
     Route::post('change-password', [ProfileController::class, 'changePassword']);
-    Route::post('update-user-status', [UserController::class, 'UpdateUserStatus']); // update user status
+    Route::post('update-user-status', [UserController::class, 'updateUserStatus']); // update user status
 
     // Teachers
     Route::prefix('teachers')->group(function () {

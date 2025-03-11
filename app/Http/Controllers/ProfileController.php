@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\CommonHelper;
 use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
-use Exception;
-use Illuminate\Support\Facades\{Auth, Hash};
+use App\Services\UserProfileService;
 
 class ProfileController extends Controller
 {
+    protected $userProfileServive;
+
+    public function __construct(UserProfileService $profileService)
+    {
+        $this->userProfileServive = $profileService;
+    }
+    
     /**
      * getProfile: Get user's basic informations
      *
@@ -17,12 +22,7 @@ class ProfileController extends Controller
      */
     public function getProfile()
     {
-        try {
-            $user = auth()->user();
-            return response200(__('message.fetched', ['name' => 'profile']), $user);
-        } catch (Exception $e) {
-            return response500(__('message.server_error', ['name' => 'profile']), $e->getMessage());
-        }
+        return $this->userProfileServive->getProfile();
     }
 
     /**
@@ -33,19 +33,7 @@ class ProfileController extends Controller
      */
     public function updateProfile(UpdateProfileRequest $request)
     {
-        $user = auth()->user();
-        $validatedData = $request->validated();
-
-        // upload profile image by the helper function
-        if ($request->hasFile('profile_image')) {
-            $validatedData['profile'] = CommonHelper::fileUpload($request->file('profile_image'), PROFILE_IMAGE_DIR);
-
-            // remove old image (get the last segment of URL)
-            $oldImageName = substr(strrchr($user->profile, "/"), 1);
-            CommonHelper::deleteImageByName($oldImageName, PROFILE_IMAGE_DIR);
-        }
-        $user->update($validatedData);
-        return response200(__('message.updated', ['name' => 'profile']), $user);
+        return $this->userProfileServive->updateProfile($request);
     }
 
     /**
@@ -56,16 +44,6 @@ class ProfileController extends Controller
      */
     public function changePassword(ChangePasswordRequest $request)
     {
-        try {
-            $user = Auth::user();
-            if (!Hash::check($request->current_password, $user->password)) {
-                return response401(__('message.incorrect_password'));
-            }
-
-            $user->update(['password' => $request->password]);
-            return response200(__('message.updated', ['name' => 'password']));
-        } catch (Exception $e) {
-            return response500(__('message.server_error', ['name' => 'updation']), $e->getMessage());
-        }
+        return $this->userProfileServive->changePassword($request->validated());
     }
 }

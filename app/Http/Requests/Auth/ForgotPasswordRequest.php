@@ -29,7 +29,7 @@ class ForgotPasswordRequest extends BaseFormRequest
     public function messages(): array
     {
         return [
-            'email.exists'   => __('message.not_exists', ['name' => 'email']),
+            'email.exists'   => __('message.not_exists', ['name' => __('message.email')]),
         ];
     }
 }

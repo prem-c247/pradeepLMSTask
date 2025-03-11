@@ -3,27 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateUserStatusRequest;
-use App\Models\User;
+use App\Services\UserProfileService;
 
 class UserController extends Controller
 {
+    protected $userProfileServive;
+
+    public function __construct(UserProfileService $profileService)
+    {
+        $this->userProfileServive = $profileService;
+    }
+
     /**
      * UpdateUserStatus: Update the user's status by their user ID
      *
      * @param  mixed $request
      * @return void
      */
-    public function UpdateUserStatus(UpdateUserStatusRequest $request)
+    public function updateUserStatus(UpdateUserStatusRequest $request)
     {
-        $user = User::find($request->user_id);
-        $user->update(['status' => $request->status]);
-
-        if ($user->status === User::ACTIVE) {
-            $message = __('message.actived', ['name' => __('message.user')]);
-        } else {
-            $message = __('message.deactived', ['name' => __('message.user')]);
-        }
-
-        return response200($message, $user);
+        return $this->userProfileServive->updateUserStatus($request->validated());
     }
 }

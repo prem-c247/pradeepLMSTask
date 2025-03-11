@@ -10,8 +10,8 @@ return [
     "registered" => ":name has been registered successfully",
     "approved" => ":name has been approved successfully",
     "processed" => ":name has already been processed",
-    "actived" => ":name has been activated successfully",
-    "deactived" => ":name has been deactivated successfully",
+    "activated" => ":name has been activated successfully",
+    "deactivated" => ":name has been deactivated successfully",
     "not_found" => ":name not found",
     "not_exists" => "The :name does not exist in our records",
     "not_access" => "You do not have access to perform this task",
@@ -27,6 +27,7 @@ return [
     "profile" => "Profile",
     "user" => "User",
     "email" => "Email",
+    "details" => "Details",
     "user_modification_request" => "User modification request",
 
     // server error messages
@@ -37,8 +38,9 @@ return [
     "updation" => "updation",
     "password" => "password",
     "sending_mail" => "sending mail",
+    "otp_verification" => "OTP verification",
     'server_error' => 'An error occurred while processing the :name. Please try again later',
-    
+
     // status
     'pending' => 'Pending',
     'active' => 'Active',

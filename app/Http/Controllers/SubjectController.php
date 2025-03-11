@@ -3,10 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Subject\{StoreSubjectRequest, UpdateSubjectRequest};
-use App\Models\{Subject, User};
+use App\Services\SubjectService;
 
 class SubjectController extends Controller
-{    
+{
+    protected $subjectService;
+
+    public function __construct(SubjectService $subjectService)
+    {
+        $this->subjectService = $subjectService;
+    }
+
     /**
      * index: Get subject details by their ID
      *
@@ -14,31 +21,9 @@ class SubjectController extends Controller
      */
     public function index()
     {
-        $query = Subject::latest();
-        $authUser = auth()->user();
-
-        // Determine the subjects to fetch based on the authenticated user's role.
-        // Each role filters subjects according to its associated school or user details. 
-        switch ($authUser->role_id) {
-            case User::ROLE_SCHOOL:
-                $query->where('school_user_id', $authUser->id);
-                break;
-
-            case User::ROLE_STUDENT:
-                $query->where('school_user_id', $authUser->studentDetails?->school_id ?? 0);
-                break;
-
-            case User::ROLE_TEACHER:
-                $query->where('school_user_id', $authUser->teacherDetails?->school_id ?? 0);
-                break;
-        }
-        $subjects = $query->paginate(PAGINATE);
-        if ($subjects->isEmpty()) {
-            return $this->notFound('subject');
-        }
-        return response200(__('message.fetched', ['name' => __('message.subject')]), $subjects);
+        return $this->subjectService->getSubjects();
     }
-    
+
     /**
      * store: Store subject information in the database 
      *
@@ -47,35 +32,20 @@ class SubjectController extends Controller
      */
     public function store(StoreSubjectRequest $request)
     {
-        $authUser = auth()->user();
-        // Teacher only can create subject
-        if ($authUser->role_id !== User::ROLE_TEACHER) {
-            return response401(__('message.not_access'));
-        }
-
-        $validatedData = $request->validated();
-        $validatedData['school_user_id'] = $authUser->teacherDetails?->school_id ?? 0;
-        $validatedData['teacher_user_id'] = $authUser->id;
-        $subject = Subject::create($validatedData);
-
-        return response201(__('message.created', ['name' => __('message.subject')]), $subject);
+        return $this->subjectService->storeSubject($request->validated());
     }
-    
+
     /**
      * show: Get subject details by their ID
      *
      * @param  mixed $id
      * @return void
      */
-    public function show($id)
+    public function show($subjectId)
     {
-        $subject = Subject::with(['schoolUser', 'teacherUser'])->find($id);
-        if (!$subject) {
-            return $this->notFound('subject');
-        }
-        return response200(__('message.fetched', ['name' => __('message.subject')]), $subject);
+        return $this->subjectService->getSubjectDetails($subjectId);
     }
-    
+
     /**
      * update: Update the subject details by their ID
      *
@@ -83,30 +53,19 @@ class SubjectController extends Controller
      * @param  mixed $id
      * @return void
      */
-    public function update(UpdateSubjectRequest $request, $id)
+    public function update(UpdateSubjectRequest $request, $subjectId)
     {
-        $subject = Subject::find($id);
-        if (!$subject) {
-            return $this->notFound('subject');
-        }
-        $validated = $request->validated();
-        $subject->update($validated);
-        return response200(__('message.updated', ['name' => __('message.subject')]), $subject);
+        return $this->subjectService->updateSubject($request->validated(), $subjectId);
     }
-    
+
     /**
      * delete: Delete subject details by their ID
      *
      * @param  mixed $id
      * @return void
      */
-    public function delete($id)
+    public function delete($subjectId)
     {
-        $subject = Subject::find($id);
-        if (!$subject) {
-            return $this->notFound('subject');
-        }
-        $subject->delete();
-        return response200(__('message.deleted', ['name' => __('message.subject')]));
+        return $this->subjectService->deleteSubject($subjectId);
     }
 }

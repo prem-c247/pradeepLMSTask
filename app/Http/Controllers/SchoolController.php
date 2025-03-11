@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\CommonHelper;
 use App\Http\Requests\School\UpdateSchoolRequest;
-use App\Models\User;
-use Exception;
+use App\Services\SchoolService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 
 class SchoolController extends Controller
 {
+    protected $schoolService;
+
+    public function __construct(SchoolService $schoolService)
+    {
+        $this->schoolService = $schoolService;
+    }
+
     /**
      * index: Get the all schools along with school details
      * Can apply multiple filter like (name, email, phone, status)
@@ -19,27 +23,7 @@ class SchoolController extends Controller
      */
     function index(Request $request)
     {
-        $query = User::school()->with('role', 'schoolDetails');
-        // Apply filters
-        if ($request->filled('filter')) {
-            $columns = ['email', 'status', 'phone'];
-            $filter = $request->filter;
-
-            // filter by the school name
-            $query->whereHas('schoolDetails', function ($subQuery) use ($filter) {
-                $subQuery->where('school_name', 'like', "%$filter%");
-            });
-            $query->orWhere(function ($subQuery) use ($filter, $columns) {
-                foreach ($columns as $column) {
-                    $subQuery->orWhere($column, 'like', '%' . $filter . '%');
-                }
-            });
-        }
-        $schools = $query->paginate(PAGINATE);
-        if ($schools->isEmpty()) {
-            return $this->notFound('school');
-        }
-        return response200(__('message.fetched', ['name' => __('message.school')]), $schools);
+        return $this->schoolService->getSchools($request);
     }
 
     /**
@@ -50,11 +34,7 @@ class SchoolController extends Controller
      */
     public function details($schoolId)
     {
-        $school = User::school()->with('schoolDetails')->find($schoolId);
-        if (!$school) {
-            return $this->notFound('school');
-        }
-        return response200(__('message.fetched', ['name' => __('message.school')]), $school);
+        return $this->schoolService->getSchoolDetails($schoolId);
     }
 
     /**
@@ -66,35 +46,7 @@ class SchoolController extends Controller
      */
     public function update(UpdateSchoolRequest $request, $schoolId)
     {
-        try {
-            $school = User::school()->find($schoolId);
-            if (!$school) {
-                return $this->notFound('school');
-            }
-            $validated = $request->validated();
-
-            // upload profile image by the helper function
-            if ($request->hasFile('profile')) {
-                $validated['profile'] = CommonHelper::fileUpload($request->file('profile'), PROFILE_IMAGE_DIR);
-
-                // Remove the old image
-                $oldImageName = $school->getAttributes()['profile'];
-                CommonHelper::deleteImageByName($oldImageName, PROFILE_IMAGE_DIR);
-            }
-            $school->update($validated);
-            $school->schoolDetails()->update(Arr::only($validated, ['school_name', 'owner_name']));
-
-            // get the address validation rule array's keys and update the address
-            $addressValidationArray = CommonHelper::getAddressValidationRules();
-            $addressValidationArrayKeys = array_keys($addressValidationArray);
-            $school->addresses()->update(Arr::only($validated, $addressValidationArrayKeys));
-
-            // load the all related data
-            $school = $school->load('schoolDetails', 'addresses');
-            return response200(__('message.updated', ['name' => __('message.school')]), $school);
-        } catch (Exception $e) {
-            return response500(__('message.server_error', ['name' => __('message.updation')]), $e->getMessage());
-        }
+        return $this->schoolService->updateSchool($request, $schoolId);
     }
 
     /**
@@ -105,15 +57,6 @@ class SchoolController extends Controller
      */
     public function delete($schoolId)
     {
-        try {
-            $school = User::find($schoolId);
-            if (!$school) {
-                return $this->notFound('school');
-            }
-            $school->delete();
-            return response200(__('message.deleted', ['name' => __('message.school')]));
-        } catch (Exception $e) {
-            return response500(__('message.server_error', ['name' => __('message.deletion')]), $e->getMessage());
-        }
+        return $this->schoolService->deleteSchool($schoolId);
     }
 }
